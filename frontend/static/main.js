@@ -8,11 +8,15 @@ function showToast(message) {
     }, 3000);
 }
 
+
+let keyboardListener = null;
+
 async function openViewer(filename) {
     const wrapper = document.querySelector("#viewer");
     wrapper.classList.remove("hidden");
 
     const viewer = document.getElementById("viewer-content");
+    viewer.innerHTML = "Loading...";
     const file = await fetch(`/data/file/${filename}`);
     const blob = await file.blob();
     if (blob.type.startsWith("image/")) {
@@ -28,6 +32,22 @@ async function openViewer(filename) {
 
     const filenameDiv = document.getElementById("viewer-filename");
     filenameDiv.textContent = filename;
+
+    if (keyboardListener) {
+        window.removeEventListener("keydown", keyboardListener);
+    }
+
+    keyboardListener = function handler(event) {
+        if (event.key === "ArrowRight") {
+            nextFile();
+        } else if (event.key === "ArrowLeft") {
+            prevFile();
+        } else if (event.key === "Escape") {
+            closeViewer();
+            window.removeEventListener("keydown", handler);
+        }
+    };
+    window.addEventListener("keydown", keyboardListener);
 }
 
 function closeViewer() {
@@ -35,6 +55,9 @@ function closeViewer() {
     wrapper.classList.add("hidden");
     const viewer = document.getElementById("viewer-content");
     viewer.innerHTML = "";
+
+    window.removeEventListener("keydown", keyboardListener);
+    keyboardListener = null;
 }
 
 async function editFilename() {
@@ -125,9 +148,10 @@ async function nextFile() {
     for (let i = 0; i < list.length; i++) {
         const fileDiv = list[i];
         const filenameDiv = fileDiv.querySelector(".filename");
-        if (filenameDiv.textContent === currentFilename) {
+        const fname = filenameDiv.getAttribute("filename");
+        if (fname === currentFilename) {
             if (i + 1 < list.length) {
-                const nextFilename = list[i + 1].querySelector(".filename").textContent;
+                const nextFilename = list[i + 1].querySelector(".filename").getAttribute("filename");
                 await openViewer(nextFilename);
             }
             break;
@@ -141,9 +165,10 @@ async function prevFile() {
     for (let i = 0; i < list.length; i++) {
         const fileDiv = list[i];
         const filenameDiv = fileDiv.querySelector(".filename");
-        if (filenameDiv.textContent === currentFilename) {
+        fname = filenameDiv.getAttribute("filename");
+        if (fname === currentFilename) {
             if (i - 1 >= 0) {
-                const prevFilename = list[i - 1].querySelector(".filename").textContent;
+                const prevFilename = list[i - 1].querySelector(".filename").getAttribute("filename");
                 await openViewer(prevFilename);
             }
             break;
@@ -173,7 +198,13 @@ async function getFileList(start=0, end=30) {
             filediv.className = "file";
             filediv.onclick = () => openViewer(file['filename']);
             const thumbnailUrl = await getThumbnail(file['filename']);
-            filediv.innerHTML = `<img src="${thumbnailUrl}" alt="Thumbnail" class="thumbnail"><div class="filename">${file['filename']}</div>`;
+            const fname = file['filename'];
+            if (fname.length > 10) {
+                displayName = fname.substring(0, 10) + "..." + fname.substring(fname.length - 10);
+            } else {
+                displayName = fname;
+            }
+            filediv.innerHTML = `<img loading="lazy" src="${thumbnailUrl}" alt="Thumbnail" class="thumbnail"><div class="filename" filename="${fname}">${displayName}</div>`;
             fileListDiv.appendChild(filediv);
         })();
     }

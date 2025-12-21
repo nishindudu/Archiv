@@ -5,6 +5,7 @@ html, body {
     width: 100%;
     font-family: Arial, sans-serif;
     color: #fff;
+    overflow-x: hidden;
 }
 
 .btn {
@@ -87,6 +88,13 @@ body {
 
 .file-picker input {
     width: auto;
+    margin-top: 5px;
+    padding: 4px 0px;
+    border-radius: 8px;
+    border: none;
+    background-color: #414141;
+    color: white;
+    cursor: pointer;
 }
 
 .toast {
@@ -174,7 +182,7 @@ body {
 .viewer-head {
     height: 40px;
     width: 100%;
-    text-align: center;
+    text-align: left;
     position: relative;
     margin-bottom: 10px;
 }
@@ -184,6 +192,8 @@ body {
     position: absolute;
     font-size: 18px;
     margin-top: 1.5vh;
+    margin-left: 1vw;
+    text-align: unset !important;
 }
 
 .viewer-head .btn {
@@ -267,7 +277,7 @@ body {
     color: white;
 }
 
-.edit-filename-box button {
+button {
     margin: 10px;
     padding: 10px 20px;
     border-radius: 8px;
