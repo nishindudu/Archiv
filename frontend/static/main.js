@@ -1,0 +1,229 @@
+function showToast(message) {
+    const toast = document.querySelector(".toast");
+    const toastMessage = document.getElementById("toast-message");
+    toastMessage.textContent = message;
+    toast.classList.add("show");
+    setTimeout(() => {
+        toast.classList.remove("show");
+    }, 3000);
+}
+
+async function openViewer(filename) {
+    const wrapper = document.querySelector("#viewer");
+    wrapper.classList.remove("hidden");
+
+    const viewer = document.getElementById("viewer-content");
+    const file = await fetch(`/data/file/${filename}`);
+    const blob = await file.blob();
+    if (blob.type.startsWith("image/")) {
+        const imageUrl = URL.createObjectURL(blob);
+        viewer.innerHTML = `<img src="${imageUrl}" alt="Image Viewer" class="viewer-image">`;
+    } else if (blob.type === "application/pdf") {
+        const pdfUrl = URL.createObjectURL(blob);
+        viewer.innerHTML = `<embed src="${pdfUrl}" type="application/pdf" class="viewer-pdf" />`;
+    } else if (blob.type.startsWith("video/")) {
+        const videoUrl = URL.createObjectURL(blob);
+        viewer.innerHTML = `<video controls class="viewer-video"><source src="${videoUrl}" type="${blob.type}">Your browser does not support the video tag.</video>`;
+    }
+
+    const filenameDiv = document.getElementById("viewer-filename");
+    filenameDiv.textContent = filename;
+}
+
+function closeViewer() {
+    const wrapper = document.querySelector(".viewer-wrapper");
+    wrapper.classList.add("hidden");
+    const viewer = document.getElementById("viewer-content");
+    viewer.innerHTML = "";
+}
+
+async function editFilename() {
+    const wrapper = document.getElementById("filename-editor");
+    wrapper.classList.remove("hidden");
+}
+
+function closeEditFilename() {
+    const wrapper = document.getElementById("filename-editor");
+    wrapper.classList.add("hidden");
+}
+
+async function saveFilename() {
+    const currentFilename = document.getElementById("viewer-filename").textContent;
+    const newFilename = document.getElementById("new-filename-input").value;
+    res = await fetch(`/data/file/${currentFilename}`, {
+        method: "PUT",
+        body: JSON.stringify({ new_filename: newFilename }),
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    });
+    if (res.status === 200) {
+        showToast("Filename updated successfully!");
+        document.getElementById("viewer-filename").textContent = newFilename;
+        loadedFiles = 0;
+        getFileList();
+        document.getElementById("new-filename-input").value = '';
+        closeEditFilename();
+    } else {
+        showToast("Filename update failed.");
+    }
+}
+
+async function addFile() {
+    files = document.getElementById("fileInput").files;
+    if (files.length > 0) {
+        for (const file of files) {
+            console.log("Selected file:", file.name);
+            let formData = new FormData();
+            formData.append("files", file);
+
+            res = await fetch("/data/add", {
+                method: "POST",
+                body: formData
+            });
+            if (res.status === 200) {
+                showToast("File uploaded successfully!");
+            } else {
+                showToast("File upload failed.");
+            }
+        }
+    }
+    document.getElementById("fileInput").value = '';
+    loadMoreFiles();
+}
+
+async function deleteFile() {
+    const filename = document.getElementById("viewer-filename").textContent;
+    res = await fetch(`/data/file/${filename}`, {
+        method: "DELETE"
+    });
+    if (res.status === 200) {
+        showToast("File deleted successfully!");
+        closeViewer();
+        loadedFiles = 0;
+        getFileList();
+    } else {
+        showToast("File deletion failed.");
+    }
+}
+
+async function downloadFile() {
+    const file = document.getElementById("viewer-content").querySelector("img, video, embed");
+    const filename = document.getElementById("viewer-filename").textContent;
+    const link = file.attributes['src'].value
+    const a = document.createElement('a');
+    a.href = link;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+}
+
+async function nextFile() {
+    const currentFilename = document.getElementById("viewer-filename").textContent;
+    const list = document.getElementById("file-list").children;
+    for (let i = 0; i < list.length; i++) {
+        const fileDiv = list[i];
+        const filenameDiv = fileDiv.querySelector(".filename");
+        if (filenameDiv.textContent === currentFilename) {
+            if (i + 1 < list.length) {
+                const nextFilename = list[i + 1].querySelector(".filename").textContent;
+                await openViewer(nextFilename);
+            }
+            break;
+        }
+    }
+}
+
+async function prevFile() {
+    const currentFilename = document.getElementById("viewer-filename").textContent;
+    const list = document.getElementById("file-list").children;
+    for (let i = 0; i < list.length; i++) {
+        const fileDiv = list[i];
+        const filenameDiv = fileDiv.querySelector(".filename");
+        if (filenameDiv.textContent === currentFilename) {
+            if (i - 1 >= 0) {
+                const prevFilename = list[i - 1].querySelector(".filename").textContent;
+                await openViewer(prevFilename);
+            }
+            break;
+        }
+    }
+}
+
+async function getThumbnail(filename) {
+    thumb = await fetch(`/data/thumbnail/${filename}`);
+    blob = await thumb.blob();
+    return URL.createObjectURL(blob);
+}
+
+let loadedFiles = 0;
+let maxFiles = 0;
+let isLoading = false;
+
+async function getFileList(start=0, end=30) {
+    list = await fetch(`/data/list?start=${start}&end=${end}`);
+    data = await list.json();
+    const fileListDiv = document.getElementById("file-list");
+    fileListDiv.innerHTML = "";
+
+    for (const file of data) {
+        (async function() {
+            const filediv = document.createElement("div");
+            filediv.className = "file";
+            filediv.onclick = () => openViewer(file['filename']);
+            const thumbnailUrl = await getThumbnail(file['filename']);
+            filediv.innerHTML = `<img src="${thumbnailUrl}" alt="Thumbnail" class="thumbnail"><div class="filename">${file['filename']}</div>`;
+            fileListDiv.appendChild(filediv);
+        })();
+    }
+    loadedFiles += data.length;
+    maxFiles = await fetch('/data/count')
+    maxFiles = await maxFiles.json();
+    maxFiles = maxFiles['count'];
+}
+
+async function loadMoreFiles() {
+    maxFiles = await fetch('/data/count')
+    maxFiles = await maxFiles.json();
+    maxFiles = maxFiles['count'];
+    if (isLoading || loadedFiles === maxFiles) return;
+    isLoading = true;
+
+    const fileListDiv = document.getElementById("file-list");
+    list = await fetch(`/data/list?start=${loadedFiles}&end=${loadedFiles + 20}`);
+    data = await list.json();
+
+    for (const file of data) {
+        (async function() {
+            const filediv = document.createElement("div");
+            filediv.className = "file";
+            filediv.onclick = () => openViewer(file['filename']);
+            const thumbnailUrl = await getThumbnail(file['filename']);
+            filediv.innerHTML = `<img src="${thumbnailUrl}" alt="Thumbnail" class="thumbnail"><div class="filename">${file['filename']}</div>`;
+            fileListDiv.appendChild(filediv);
+        })();
+    }
+    loadedFiles += data.length;
+
+    if (loadedFiles > maxFiles) {
+        maxFiles = await fetch('/data/count')
+        maxFiles = await maxFiles.json();
+        maxFiles = maxFiles['count'];
+    }
+
+    isLoading = false;
+}
+
+window.addEventListener("scroll", async function() {
+    scrollHeight = window.scrollY + window.innerHeight;
+    pageHeight = document.documentElement.scrollHeight;
+    scrolled = (scrollHeight / pageHeight) * 100;
+    if (scrolled > 80) {
+        await loadMoreFiles();
+    }
+});
+
+document.addEventListener("DOMContentLoaded", function() {
+    getFileList();
+});

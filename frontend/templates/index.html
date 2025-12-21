@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Archiv</title>
+        <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+        <script src="{{ url_for('static', filename='main.js') }}" defer></script>
+    </head>
+    <body>
+        <div class="navbar">
+            <h1>Archiv</h1>
+        </div>
+        <div class="space"></div>
+        <div class="sidebar">
+            <div class="file-picker sidebar-item">
+                <label for="fileInput">Add to Archiv</label>
+                <input type="file" id="fileInput" multiple>
+                <button onclick="addFile()">Upload</button>
+            </div>
+        </div>
+        <div class="content" id="file-list">
+            <!-- File list will be populated here -->
+        </div>
+        <div class="viewer-wrapper hidden" id="viewer" onclick="closeViewer()">
+            <div class="viewer" onclick="event.stopPropagation()">
+                <div class="viewer-head">
+                    <span id="viewer-filename">Name</span>
+                    <div class="btn" onclick="closeViewer()">X</div>
+                </div>
+                <div id="viewer-content"></div>
+                <div class="controls">
+                    <div class="btn" onclick="prevFile()">&#8592; Prev</div>
+                    <div class="group">
+                        <img src="/static/icon/trash.svg" class="btn" id="delete-btn" onclick="deleteFile()" title="Delete File">
+                        <img src="/static/icon/download.svg" class="btn" onclick="downloadFile()" title="Download File">
+                        <img src="/static/icon/edit.svg" alt="Edit filename" class="btn" onclick="editFilename()" title="Edit Filename">
+                    </div>
+                    <div class="btn" onclick="nextFile()">Next &#8594;</div>
+                </div>
+            </div>
+        </div>
+        <div class="viewer-wrapper hidden" id="filename-editor" onclick="closeEditFilename()">
+            <div class="edit-filename-box" onclick="event.stopPropagation()">
+                <h3>Edit Filename</h3>
+                <input type="text" id="new-filename-input" placeholder="Filename" />
+                <div class="edit-filename-buttons">
+                    <button onclick="saveFilename()">Save</button>
+                    <button onclick="closeEditFilename()">Cancel</button>
+                </div>
+            </div>
+        </div>
+        <div class="toast">
+            <span id="toast-message"></span>
+        </div>
+    </body>
+</html>
