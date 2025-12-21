@@ -286,3 +286,15 @@ button {
     color: white;
     cursor: pointer;
 }
+
+
+.thumb-error, .viewer-error {
+    filter: invert();
+    height: 80%;
+    border-radius: 0 !important;
+    border: none !important;
+}
+
+.viewer-error {
+    height: 64vh !important;
+}

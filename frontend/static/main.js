@@ -28,6 +28,8 @@ async function openViewer(filename) {
     } else if (blob.type.startsWith("video/")) {
         const videoUrl = URL.createObjectURL(blob);
         viewer.innerHTML = `<video controls class="viewer-video"><source src="${videoUrl}" type="${blob.type}">Your browser does not support the video tag.</video>`;
+    } else {
+        viewer.innerHTML = "<img src='/static/icon/cloud-off.svg' alt='File Icon' class='viewer-file-icon viewer-error' />";
     }
 
     const filenameDiv = document.getElementById("viewer-filename");
@@ -204,7 +206,7 @@ async function getFileList(start=0, end=30) {
             } else {
                 displayName = fname;
             }
-            filediv.innerHTML = `<img loading="lazy" src="${thumbnailUrl}" alt="Thumbnail" class="thumbnail"><div class="filename" filename="${fname}">${displayName}</div>`;
+            filediv.innerHTML = `<img loading="lazy" src="${thumbnailUrl}" onerror="this.src='/static/icon/cloud-off.svg';this.classList.add('thumb-error');" alt="Thumbnail" class="thumbnail"><div class="filename" filename="${fname}">${displayName}</div>`;
             fileListDiv.appendChild(filediv);
         })();
     }
@@ -231,7 +233,7 @@ async function loadMoreFiles() {
             filediv.className = "file";
             filediv.onclick = () => openViewer(file['filename']);
             const thumbnailUrl = await getThumbnail(file['filename']);
-            filediv.innerHTML = `<img src="${thumbnailUrl}" alt="Thumbnail" class="thumbnail"><div class="filename">${file['filename']}</div>`;
+            filediv.innerHTML = `<img loading="lazy" src="${thumbnailUrl}" onerror="this.src='/static/icon/cloud-off.svg';this.classList.add('thumb-error');" alt="Thumbnail" class="thumbnail"><div class="filename">${file['filename']}</div>`;
             fileListDiv.appendChild(filediv);
         })();
     }
@@ -253,7 +255,7 @@ window.addEventListener("scroll", async function() {
     if (scrolled > 80) {
         await loadMoreFiles();
     }
-});
+}, true); //true to capture event from child elements
 
 document.addEventListener("DOMContentLoaded", function() {
     getFileList();
