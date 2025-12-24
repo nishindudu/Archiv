@@ -220,6 +220,19 @@ def get_thumbnail(filename):
         return send_file(BytesIO(thumb), mimetype=mime_type or 'application/octet-stream')
     else:
         return jsonify({"error": "Thumbnail not found"}), 404
+    
+
+@app.route('/data/info', methods=['GET'])
+def get_info():
+    storage = Storage()
+    data = storage.get_file_list()
+    total_files = len(data)
+    total_size = sum(entry['file_size'] for entry in data)
+    print(f"Total files: {total_files}, Total size: {total_size} bytes")
+    return jsonify({
+        "storage_used": total_size,
+        "total_files": total_files,
+    })
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', debug=True)

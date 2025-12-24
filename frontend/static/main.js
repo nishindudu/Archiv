@@ -98,7 +98,7 @@ async function addFile() {
     files = document.getElementById("fileInput").files;
     if (files.length > 0) {
         for (const file of files) {
-            console.log("Selected file:", file.name);
+            // console.log("Selected file:", file.name);
             let formData = new FormData();
             formData.append("files", file);
 
@@ -115,6 +115,7 @@ async function addFile() {
     }
     document.getElementById("fileInput").value = '';
     loadMoreFiles();
+    getAppInfo();
 }
 
 async function deleteFile() {
@@ -216,10 +217,16 @@ async function getFileList(start=0, end=30) {
     maxFiles = maxFiles['count'];
 }
 
+let fetchTries = 101;
+
 async function loadMoreFiles() {
-    maxFiles = await fetch('/data/count')
-    maxFiles = await maxFiles.json();
-    maxFiles = maxFiles['count'];
+    fetchTries += 1;
+    if (fetchTries > 100) {
+        maxFiles = await fetch('/data/count')
+        maxFiles = await maxFiles.json();
+        maxFiles = maxFiles['count'];
+        fetchTries = 0;
+    }
     if (isLoading || loadedFiles === maxFiles) return;
     isLoading = true;
 
@@ -233,7 +240,13 @@ async function loadMoreFiles() {
             filediv.className = "file";
             filediv.onclick = () => openViewer(file['filename']);
             const thumbnailUrl = await getThumbnail(file['filename']);
-            filediv.innerHTML = `<img loading="lazy" src="${thumbnailUrl}" onerror="this.src='/static/icon/cloud-off.svg';this.classList.add('thumb-error');" alt="Thumbnail" class="thumbnail"><div class="filename">${file['filename']}</div>`;
+            const fname = file['filename'];
+            if (fname.length > 10) {
+                displayName = fname.substring(0, 10) + "..." + fname.substring(fname.length - 10);
+            } else {
+                displayName = fname;
+            }
+            filediv.innerHTML = `<img loading="lazy" src="${thumbnailUrl}" onerror="this.src='/static/icon/cloud-off.svg';this.classList.add('thumb-error');" alt="Thumbnail" class="thumbnail"><div class="filename" filename="${fname}">${displayName}</div>`;
             fileListDiv.appendChild(filediv);
         })();
     }
@@ -257,6 +270,20 @@ window.addEventListener("scroll", async function() {
     }
 }, true); //true to capture event from child elements
 
+
+async function getAppInfo() {
+    res = await fetch('/data/info');
+    res = await res.json();
+
+    storageElement = document.getElementById("storage-used");
+    totalFilesElement = document.getElementById("total-files");
+
+    storageElement.textContent = `${((res['storage_used']/1024/1024).toFixed(2))}MB`;
+    totalFilesElement.textContent = res['total_files'];
+}
+
+
 document.addEventListener("DOMContentLoaded", function() {
     getFileList();
+    getAppInfo();
 });
