@@ -135,6 +135,10 @@ class Storage:
 def home():
     return render_template('index.html')
 
+@app.errorhandler(404)
+def page_not_found(e):
+    return redirect(url_for('home'))
+
 @app.route('/static/icon/<path:filename>')
 def serve_icon(filename):
     return send_from_directory(os.path.join('frontend', 'static', 'icons'), filename)
@@ -228,7 +232,6 @@ def get_info():
     data = storage.get_file_list()
     total_files = len(data)
     total_size = sum(entry['file_size'] for entry in data)
-    print(f"Total files: {total_files}, Total size: {total_size} bytes")
     return jsonify({
         "storage_used": total_size,
         "total_files": total_files,
