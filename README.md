@@ -32,4 +32,12 @@ It allows you to upload, view and manage your files through a web UI.
 > <b>NOTE</b><br>
 > This will start a development server. For production, consider using a production server like Gunicorn.
 
-5. Open your web browser and navigate to `http://localhost:5000` to access the Archiv web interface.
+5. Production Server with Waitress:
+    ```bash
+    pip install waitress
+    waitress-serve main:app
+    ```
+> <b>NOTE</b><br>
+> This will start the application using Waitress, a production-ready WSGI server.
+
+6. Open your web browser and navigate to `http://localhost:5000` to access the Archiv web interface.
