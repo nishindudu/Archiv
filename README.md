@@ -41,3 +41,8 @@ It allows you to upload, view and manage your files through a web UI.
 > This will start the application using Waitress, a production-ready WSGI server.
 
 6. Open your web browser and navigate to `http://localhost:5000` to access the Archiv web interface.
+
+
+## AI Usage
+
+AI was used to suggest features and for understanding some methods of Flask.
